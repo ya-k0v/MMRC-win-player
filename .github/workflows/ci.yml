@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, release/*]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analysis
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - run: dotnet restore src/MMRCPlayer/MMRCPlayer.csproj
+      - run: dotnet build src/MMRCPlayer/MMRCPlayer.csproj -c Release --no-restore /p:Version=${{ steps.version.outputs.VERSION }}
+
+  build:
+    name: Build
+    needs: analyze
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content version.json | ConvertFrom-Json).version
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - run: dotnet publish src/MMRCPlayer/MMRCPlayer.csproj -c Release -r win-x64 --self-contained true -o publish /p:Version=${{ steps.version.outputs.VERSION }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: MMRC-Windows-player-${{ steps.version.outputs.VERSION }}-zip
+          path: publish/
+          retention-days: 90
