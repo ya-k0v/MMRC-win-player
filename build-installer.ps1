@@ -92,7 +92,7 @@ foreach ($file in $files) {
     $componentId++
     $id = "cmp$componentId"
     $fileId = "fil$componentId"
-    $sourcePath = "`$(var.PublishDir)\\$relativePath"
+    $sourcePath = $file.FullName.Replace('\', '\\')
 
     $fileName = $file.Name
     $sb.AppendLine("      <Component Id=`"$id`" Guid=`"$([guid]::NewGuid())`" >") | Out-Null
@@ -111,7 +111,6 @@ Write-Host "Building MSI..." -ForegroundColor Yellow
 
 & wix build $MainWxs $ComponentsFile `
     -acceptEula wix7 `
-    -d "PublishDir=$PublishDir" `
     -o $OutputFile
 
 if ($LASTEXITCODE -ne 0) {
