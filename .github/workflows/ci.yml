@@ -43,7 +43,6 @@ jobs:
       - name: Verify
         shell: pwsh
         run: |
-          $exe = "publish\MMRCPlayer.exe"
           $required = @(
             "publish\MMRCPlayer.exe",
             "publish\MMRCPlayer.dll",
@@ -57,10 +56,10 @@ jobs:
               exit 1
             }
           }
-          $size = [math]::Round((Get-Item $exe).Length / 1MB, 1)
-          Write-Host "MMRCPlayer.exe: $size MB"
-          if ($size -lt 5) {
-            Write-Error "Self-contained build failed - exe too small"
+          $totalMB = [math]::Round((Get-ChildItem -Path publish -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB, 1)
+          Write-Host "Total publish size: $totalMB MB"
+          if ($totalMB -lt 50) {
+            Write-Error "Self-contained build failed - total size too small ($totalMB MB)"
             exit 1
           }
 
