@@ -2,7 +2,7 @@
 .SYNOPSIS
     Setup LibVLC native binaries for MMRC Player
 .DESCRIPTION
-    Copies LibVLC from installed VLC or NuGet cache
+    Copies LibVLC from installed VLC, NuGet cache, or downloads from videolan.org
 #>
 
 $ErrorActionPreference = "Stop"
@@ -107,7 +107,63 @@ if (-not $copied) {
                 }
             }
 
-            $copied = (Test-Path (Join-Path $LibVLCDir "libvlc.dll"))
+            $copied = (Test-Path (Join-Path $LibVLCDir "libvlc.dll")) -and
+                      (Test-Path (Join-Path $LibVLCDir "plugins"))
+    }
+}
+
+# Source 3: Download VLC from videolan.org
+if (-not $copied) {
+    Write-Host "`n  NuGet cache incomplete. Downloading VLC 3.0.20..." -ForegroundColor Yellow
+
+    $vlcVersion = "3.0.20"
+    $vlcUrl = "https://get.videolan.org/vlc/$vlcVersion/win64/vlc-$vlcVersion-win64.zip"
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "vlc-download-$(Get-Random)"
+    $zipFile = Join-Path $tempDir "vlc.zip"
+
+    try {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+        Write-Host "    Downloading $vlcUrl" -ForegroundColor Gray
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $vlcUrl -OutFile $zipFile -UseBasicParsing
+
+        Write-Host "    Extracting..." -ForegroundColor Gray
+        Expand-Archive -Path $zipFile -DestinationPath $tempDir -Force
+
+        $vlcExtracted = Join-Path $tempDir "vlc-$vlcVersion"
+        if (-not (Test-Path $vlcExtracted)) {
+            $vlcExtracted = Get-ChildItem -Path $tempDir -Directory -Filter "vlc-*" | Select-Object -First 1
+            if ($vlcExtracted) { $vlcExtracted = $vlcExtracted.FullName }
+        }
+
+        if (-not $vlcExtracted -or -not (Test-Path $vlcExtracted)) {
+            Write-Host "    Extracted VLC folder not found" -ForegroundColor Red
+            exit 1
+        }
+
+        foreach ($dll in @("libvlccore.dll", "libvlc.dll")) {
+            $src = Join-Path $vlcExtracted $dll
+            if (Test-Path $src) {
+                Copy-Item $src -Destination $LibVLCDir -Force
+                $size = [math]::Round((Get-Item $src).Length / 1KB, 0)
+                Write-Host "    $dll ($size KB)" -ForegroundColor Green
+            }
+        }
+
+        $pluginsSrc = Join-Path $vlcExtracted "plugins"
+        if (Test-Path $pluginsSrc) {
+            $destPlugins = Join-Path $LibVLCDir "plugins"
+            Copy-Item -Path $pluginsSrc -Destination $destPlugins -Recurse -Force
+            $cnt = (Get-ChildItem -Path $destPlugins -Recurse -Filter "*.dll").Count
+            $sz = [math]::Round((Get-ChildItem -Path $destPlugins -Recurse -Filter "*.dll" | Measure-Object -Property Length -Sum).Sum / 1MB, 1)
+            Write-Host "    plugins/ ($cnt DLLs, $sz MB)" -ForegroundColor Green
+        }
+
+        $copied = (Test-Path (Join-Path $LibVLCDir "libvlc.dll"))
+    }
+    finally {
+        if (Test-Path $tempDir) { Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue }
     }
 }
 
