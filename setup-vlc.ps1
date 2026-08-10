@@ -24,9 +24,7 @@ New-Item -ItemType Directory -Path $LibVLCDir -Force | Out-Null
 # Source 1: Installed VLC
 $vlcPaths = @(
     "C:\Program Files\VideoLAN\VLC",
-    "C:\Program Files (x86)\VideoLAN\VLC",
-    "${env:ProgramFiles}\VideoLAN\VLC",
-    "${env:ProgramFiles(x86)}\VideoLAN\VLC"
+    "${env:ProgramFiles}\VideoLAN\VLC"
 )
 
 $copied = $false
@@ -82,7 +80,13 @@ if (-not $copied) {
 
     if ($vlcPkg) {
             Write-Host "    Package: $($vlcPkg.Name)" -ForegroundColor Gray
-            $allDlls = Get-ChildItem -Path $vlcPkg.FullName -Recurse -Filter "*.dll"
+            $nativeDir = Join-Path $vlcPkg.FullName "build\x64"
+            if (-not (Test-Path $nativeDir)) {
+                Write-Host "    x64 native directory not found: $nativeDir" -ForegroundColor Red
+                exit 1
+            }
+
+            $allDlls = Get-ChildItem -Path $nativeDir -Recurse -Filter "*.dll"
 
             foreach ($dll in $allDlls) {
                 if ($dll.Name -in @("libvlccore.dll", "libvlc.dll")) {
@@ -91,7 +95,7 @@ if (-not $copied) {
                 }
             }
 
-            $pluginsDirs = Get-ChildItem -Path $vlcPkg.FullName -Recurse -Directory -Filter "plugins"
+            $pluginsDirs = Get-ChildItem -Path $nativeDir -Recurse -Directory -Filter "plugins"
             foreach ($pDir in $pluginsDirs) {
                 $pluginDlls = Get-ChildItem -Path $pDir.FullName -Filter "*.dll"
                 if ($pluginDlls.Count -gt 0) {
