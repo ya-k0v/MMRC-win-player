@@ -40,6 +40,12 @@ jobs:
         working-directory: src/MMRCPlayer
         run: dotnet publish -c Release -r win-x64 --self-contained true -o ../../publish
 
+      - name: Build MSI installer
+        shell: powershell
+        run: |
+          dotnet tool install --global wix
+          ./build-installer.ps1 -Version "1.0.1"
+
       - name: Verify
         shell: pwsh
         run: |
@@ -68,4 +74,11 @@ jobs:
         with:
           name: MMRCPlayer-${{ github.sha }}
           path: publish/
+          retention-days: 14
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MMRCPlayer-Installer-${{ github.sha }}
+          path: output/MMRCPlayer.msi
           retention-days: 14

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package Name="MMRC Player"
+           Manufacturer="VideoControl"
+           Version="1.0.1"
+           UpgradeCode="B5E3A8D1-7F2C-4A9E-8D1B-3C6F5A2E9D4F"
+           Scope="perMachine">
+
+    <SummaryInformation Description="MMRC Digital Signage Player for Windows" Manufacturer="VideoControl" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of MMRC Player is already installed." />
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLFOLDER" Name="MMRC Player" />
+    </StandardDirectory>
+
+    <Icon Id="AppIcon" SourceFile="$(var.PublishDir)\MMRCPlayer.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+  </Package>
+
+</Wix>
