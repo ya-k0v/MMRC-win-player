@@ -111,6 +111,7 @@ Write-Host "Building MSI..." -ForegroundColor Yellow
 
 & wix build $MainWxs $ComponentsFile `
     -acceptEula wix7 `
+    -d "PublishDir=$PublishDir" `
     -o $OutputFile
 
 if ($LASTEXITCODE -ne 0) {
