@@ -64,14 +64,23 @@ foreach ($vlcPath in $vlcPaths) {
 if (-not $copied) {
     Write-Host "`n  Installed VLC not found. Trying NuGet cache..." -ForegroundColor Yellow
 
-    $nugetLine = & dotnet nuget locals global-packages -l 2>$null
-    $nugetCache = ($nugetLine -replace '.*?:\s*', '').Trim()
+    $nugetRoots = @()
+    if ($env:NUGET_PACKAGES) {
+        $nugetRoots += $env:NUGET_PACKAGES
+    }
+    $nugetRoots += (Join-Path $env:USERPROFILE ".nuget\packages")
 
-    if ($nugetCache -and (Test-Path $nugetCache)) {
-        $vlcPkg = Get-ChildItem -Path $nugetCache -Directory -Filter "videolan.libvlc.windows*" -ErrorAction SilentlyContinue |
-            Sort-Object Name -Descending | Select-Object -First 1
+    $vlcPkg = $null
+    foreach ($nugetRoot in ($nugetRoots | Select-Object -Unique)) {
+        $packageRoot = Join-Path $nugetRoot "videolan.libvlc.windows"
+        if (Test-Path $packageRoot) {
+            $vlcPkg = Get-ChildItem -Path $packageRoot -Directory -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending | Select-Object -First 1
+            if ($vlcPkg) { break }
+        }
+    }
 
-        if ($vlcPkg) {
+    if ($vlcPkg) {
             Write-Host "    Package: $($vlcPkg.Name)" -ForegroundColor Gray
             $allDlls = Get-ChildItem -Path $vlcPkg.FullName -Recurse -Filter "*.dll"
 
@@ -95,7 +104,6 @@ if (-not $copied) {
             }
 
             $copied = (Test-Path (Join-Path $LibVLCDir "libvlc.dll"))
-        }
     }
 }
 
