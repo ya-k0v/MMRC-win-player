@@ -33,7 +33,7 @@ jobs:
         run: dotnet restore -r win-x64
 
       - name: Setup VLC native binaries
-        shell: pwsh
+        shell: powershell
         run: ./setup-vlc.ps1
 
       - name: Build
