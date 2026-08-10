@@ -94,15 +94,17 @@ if (-not $copied) {
                 }
             }
 
-            $copied = $true
+            $copied = (Test-Path (Join-Path $LibVLCDir "libvlc.dll"))
         }
     }
 }
 
 # Verify
-if (-not (Test-Path (Join-Path $LibVLCDir "libvlccore.dll"))) {
+if (-not (Test-Path (Join-Path $LibVLCDir "libvlccore.dll")) -or
+    -not (Test-Path (Join-Path $LibVLCDir "libvlc.dll")) -or
+    -not (Test-Path (Join-Path $LibVLCDir "plugins"))) {
     Write-Host "`nERROR: Could not find LibVLC" -ForegroundColor Red
-    Write-Host "  Install VLC from https://www.videolan.org/vlc/" -ForegroundColor Yellow
+    Write-Host "  Restore VideoLAN.LibVLC.Windows or install x64 VLC from https://www.videolan.org/vlc/" -ForegroundColor Yellow
     exit 1
 }
 

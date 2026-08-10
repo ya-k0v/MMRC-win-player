@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -44,6 +44,19 @@ jobs:
         shell: pwsh
         run: |
           $exe = "publish\MMRCPlayer.exe"
+          $required = @(
+            "publish\MMRCPlayer.exe",
+            "publish\MMRCPlayer.dll",
+            "publish\libvlc.dll",
+            "publish\libvlccore.dll",
+            "publish\plugins"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path $path)) {
+              Write-Error "Required publish output is missing: $path"
+              exit 1
+            }
+          }
           $size = [math]::Round((Get-Item $exe).Length / 1MB, 1)
           Write-Host "MMRCPlayer.exe: $size MB"
           if ($size -lt 5) {

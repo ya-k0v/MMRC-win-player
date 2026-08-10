@@ -42,8 +42,9 @@ function Install-MMRCPlayer {
         New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
     }
 
-    Copy-Item -Path $sourceExe -Destination $ExePath -Force
-    Write-Host "Copied to $ExePath" -ForegroundColor Green
+    $publishDir = Join-Path $currentDir "publish"
+    Copy-Item -Path (Join-Path $publishDir "*") -Destination $InstallDir -Recurse -Force
+    Write-Host "Copied publish output to $InstallDir" -ForegroundColor Green
 
     $config = @{
         ServerUrl = $ServerUrl
@@ -58,11 +59,13 @@ function Install-MMRCPlayer {
         CrossfadeDurationMs = 500
     } | ConvertTo-Json
 
-    $configPath = "$InstallDir\appsettings.json"
+    $configPath = "$InstallDir\config.json"
     $config | Out-File -FilePath $configPath -Encoding UTF8
     Write-Host "Config saved to $configPath" -ForegroundColor Green
 
-    $action = New-ScheduledTaskAction -Execute $ExePath
+    $action = New-ScheduledTaskAction `
+        -Execute $ExePath `
+        -Argument "--server `"$ServerUrl`" --device-id `"$DeviceId`""
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     $settings = New-ScheduledTaskSettingsSet `
         -AllowStartIfOnBatteries `
