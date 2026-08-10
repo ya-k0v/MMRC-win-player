@@ -125,8 +125,7 @@ if (-not $copied) {
         New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
         Write-Host "    Downloading $vlcUrl" -ForegroundColor Gray
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri $vlcUrl -OutFile $zipFile -UseBasicParsing
+        & curl.exe -L -o $zipFile $vlcUrl
 
         Write-Host "    Extracting..." -ForegroundColor Gray
         Expand-Archive -Path $zipFile -DestinationPath $tempDir -Force
